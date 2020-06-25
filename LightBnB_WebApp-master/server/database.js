@@ -19,20 +19,10 @@ const pool = new Pool(configuration);
  */
 const getUserWithEmail = function (email) {
   return pool.query(`
-  SELECT email
+  SELECT *
   FROM users
   WHERE email = $1`, [email])
-  .then((res) => res.rows);
-  // let user;
-  // for (const userId in users) {
-  //   user = users[userId];
-  //   if (user.email.toLowerCase() === email.toLowerCase()) {
-  //     break;
-  //   } else {
-  //     user = null;
-  //   }
-  // }
-  // return Promise.resolve(user);
+  .then((res) => res.rows[0]);
 };
 exports.getUserWithEmail = getUserWithEmail;
 
@@ -43,11 +33,10 @@ exports.getUserWithEmail = getUserWithEmail;
  */
 const getUserWithId = function (id) {
   return pool.query(`
-  SELECT id
+  SELECT *
   FROM users
   WHERE id = $1`, [id])
-  .then((res) => res.rows);
-  // return Promise.resolve(users[id]);
+  .then((res) => res.rows[0]);
 };
 exports.getUserWithId = getUserWithId;
 
@@ -60,12 +49,9 @@ const addUser = function (user) {
   const { name, password, email} = user;
   return pool.query(`
   INSERT INTO users (name, email, password)
-  VALUES ($1, $2, $3)`, [name, password, email])
-  .then()
-  // const userId = Object.keys(users).length + 1;
-  // user.id = userId;
-  // users[userId] = user;
-  // return Promise.resolve(user);
+  VALUES ($1, $2, $3)
+  RETURNING *;`, [name, email, password])
+  .then(res => res.rows[0])
 };
 exports.addUser = addUser;
 
