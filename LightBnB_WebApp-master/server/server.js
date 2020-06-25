@@ -1,5 +1,5 @@
 require('dotenv').config();
-const database = require('./database');
+const database = require('./db/database');
 const apiRoutes = require('./apiRoutes');
 const userRoutes = require('./userRoutes');
 
