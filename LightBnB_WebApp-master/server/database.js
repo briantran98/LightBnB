@@ -87,16 +87,60 @@ exports.getAllReservations = getAllReservations;
  * @param {*} limit The number of results to return.
  * @return {Promise<[{}]>}  A promise to the properties.
  */
-const getAllProperties = function (options, limit = 10) {
-  return pool.query(`
-  SELECT *
+const getAllProperties = function(options, limit = 10) {
+  const queryParams = [];
+  // Default query
+  let queryString = `
+  SELECT properties.*, avg(property_reviews.rating) as average_rating
   FROM properties
-  LIMIT $1
-  `,
-      [limit]
-    )
-    .then((res) => res.rows);
-};
+  JOIN property_reviews ON properties.id = property_id
+  `;
+
+  // Query options
+  if (options.city) {
+    queryParams.push(`%${options.city}%`);
+    queryString += `WHERE city LIKE $${queryParams.length} `;
+  }
+
+  if (options.owner_id) {
+    queryParams.push(`${options.owner_id}`);
+    queryString += concatOptionsHelper (queryParams);
+    queryString += `owner_id LIKE $${queryParams.length} `;
+  }
+
+  if (options.minimum_price_per_night) {
+    queryParams.push(options.minimum_price_per_night * 100);
+    queryString += concatOptionsHelper (queryParams);
+    queryString += `cost_per_night >= $${queryParams.length} `;
+  }
+
+  if (options.maximum_price_per_night) {
+    queryParams.push(options.maximum_price_per_night * 100);
+    queryString += concatOptionsHelper (queryParams);
+
+    queryString += `cost_per_night <= $${queryParams.length} `;
+  }
+
+  if (options.minimum_rating) {
+    queryParams.push(`${options.minimum_rating}`);
+    queryString += concatOptionsHelper (queryParams);
+
+    queryString += `rating >= $${queryParams.length} `;
+  }
+
+  // The limit option for the number of rows
+  queryParams.push(limit);
+  queryString += `
+  GROUP BY properties.id
+  ORDER BY cost_per_night
+  LIMIT $${queryParams.length};
+  `;
+
+  // Query call
+  return pool.query(queryString, queryParams)
+  .then(res => res.rows);
+}
+
 exports.getAllProperties = getAllProperties;
 
 /**
@@ -111,3 +155,16 @@ const addProperty = function (property) {
   return Promise.resolve(property);
 };
 exports.addProperty = addProperty;
+
+/**
+ * Concats either AND or WHERE depending if there are previous options
+ * @param {*} options The array that will be used to grab the number of options
+ * @return {String} A string of either '\nAND' or 'WHERE'
+ */
+const concatOptionsHelper = (options) => {
+  if (options.length > 1) {
+    return `\nAND `
+  } else {
+    return `WHERE `
+  }
+}
