@@ -22,10 +22,11 @@
 ├── sass
 └── server
   ├── apiRoutes.js
-  ├── database.js
   ├── json
   ├── server.js
-  └── userRoutes.js
+  ├──  userRoutes.js
+  └── db
+      └── database.js
 ```
 
 * `public` contains all of the HTML, CSS, and client side JavaScript. 
