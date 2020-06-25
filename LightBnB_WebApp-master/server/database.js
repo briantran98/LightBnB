@@ -1,13 +1,11 @@
-const properties = require("./json/properties.json");
-const users = require("./json/users.json");
-const { Pool } = require("pg");
+const { Pool } = require('pg');
 
 const configuration = {
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-}
+	user: process.env.DB_USER,
+	password: process.env.DB_PASS,
+	host: process.env.DB_HOST,
+	database: process.env.DB_NAME,
+};
 const pool = new Pool(configuration);
 
 /// Users
@@ -18,11 +16,11 @@ const pool = new Pool(configuration);
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = function (email) {
-  return pool.query(`
+	return pool.query(`
   SELECT *
   FROM users
   WHERE email = $1`, [email])
-  .then((res) => res.rows[0]);
+		.then((res) => res.rows[0]);
 };
 exports.getUserWithEmail = getUserWithEmail;
 
@@ -32,11 +30,11 @@ exports.getUserWithEmail = getUserWithEmail;
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithId = function (id) {
-  return pool.query(`
+	return pool.query(`
   SELECT *
   FROM users
   WHERE id = $1`, [id])
-  .then((res) => res.rows[0]);
+		.then((res) => res.rows[0]);
 };
 exports.getUserWithId = getUserWithId;
 
@@ -46,12 +44,12 @@ exports.getUserWithId = getUserWithId;
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser = function (user) {
-  const { name, password, email} = user;
-  return pool.query(`
+	const { name, password, email} = user;
+	return pool.query(`
   INSERT INTO users (name, email, password)
   VALUES ($1, $2, $3)
   RETURNING *;`, [name, email, password])
-  .then(res => res.rows[0])
+		.then(res => res.rows[0]);
 };
 exports.addUser = addUser;
 
@@ -63,7 +61,7 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function (guest_id, limit = 10) {
-  return pool.query(`
+	return pool.query(`
   SELECT properties.*, reservations.*, avg(rating) as average_rating
   FROM reservations
   JOIN properties ON reservations.property_id = properties.id
@@ -74,8 +72,8 @@ const getAllReservations = function (guest_id, limit = 10) {
   ORDER BY reservations.start_date
   LIMIT $2;
   `, [guest_id, limit])
-  .then((res) => res.rows);
-  // return getAllProperties(null, 2);
+		.then((res) => res.rows);
+	// return getAllProperties(null, 2);
 };
 exports.getAllReservations = getAllReservations;
 
@@ -88,58 +86,59 @@ exports.getAllReservations = getAllReservations;
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function(options, limit = 10) {
-  const queryParams = [];
-  // Default query
-  let queryString = `
+	const queryParams = [];
+	// Default query
+	let queryString = `
   SELECT properties.*, avg(property_reviews.rating) as average_rating
   FROM properties
   JOIN property_reviews ON properties.id = property_id
   `;
 
-  // Query options
-  if (options.city) {
-    queryParams.push(`%${options.city}%`);
-    queryString += `WHERE city LIKE $${queryParams.length} `;
-  }
+	// Query options
+	if (options.city) {
+		queryParams.push(`%${options.city}%`);
+		queryString += `WHERE city LIKE $${queryParams.length} `;
+	}
 
-  if (options.owner_id) {
-    queryParams.push(`${options.owner_id}`);
-    queryString += concatOptionsHelper (queryParams);
-    queryString += `owner_id LIKE $${queryParams.length} `;
-  }
+	if (options.owner_id) {
+		queryParams.push(`${options.owner_id}`);
+		queryString += concatOptionsHelper (queryParams);
+		queryString += `owner_id LIKE $${queryParams.length} `;
+	}
 
-  if (options.minimum_price_per_night) {
-    queryParams.push(options.minimum_price_per_night * 100);
-    queryString += concatOptionsHelper (queryParams);
-    queryString += `cost_per_night >= $${queryParams.length} `;
-  }
+	if (options.minimum_price_per_night) {
+		queryParams.push(options.minimum_price_per_night * 100);
+		queryString += concatOptionsHelper (queryParams);
+		queryString += `cost_per_night >= $${queryParams.length} `;
+	}
 
-  if (options.maximum_price_per_night) {
-    queryParams.push(options.maximum_price_per_night * 100);
-    queryString += concatOptionsHelper (queryParams);
+	if (options.maximum_price_per_night) {
+		queryParams.push(options.maximum_price_per_night * 100);
+		queryString += concatOptionsHelper (queryParams);
 
-    queryString += `cost_per_night <= $${queryParams.length} `;
-  }
+		queryString += `cost_per_night <= $${queryParams.length} `;
+	}
 
-  if (options.minimum_rating) {
-    queryParams.push(`${options.minimum_rating}`);
-    queryString += concatOptionsHelper (queryParams);
+	if (options.minimum_rating) {
+		queryParams.push(`${options.minimum_rating}`);
+		queryString += concatOptionsHelper (queryParams);
 
-    queryString += `rating >= $${queryParams.length} `;
-  }
+		queryString += `rating >= $${queryParams.length} `;
+	}
 
-  // The limit option for the number of rows
-  queryParams.push(limit);
-  queryString += `
+	// The limit option for the number of rows
+	queryParams.push(limit);
+	queryString += `
   GROUP BY properties.id
   ORDER BY cost_per_night
   LIMIT $${queryParams.length};
   `;
 
-  // Query call
-  return pool.query(queryString, queryParams)
-  .then(res => res.rows);
-}
+	// Query call
+	return pool.query(queryString, queryParams)
+		.then(res => res.rows);
+};
+
 
 exports.getAllProperties = getAllProperties;
 
@@ -149,10 +148,7 @@ exports.getAllProperties = getAllProperties;
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function (property) {
-  const propertyId = Object.keys(properties).length + 1;
-  property.id = propertyId;
-  properties[propertyId] = property;
-  return Promise.resolve(property);
+
 };
 exports.addProperty = addProperty;
 
@@ -162,9 +158,9 @@ exports.addProperty = addProperty;
  * @return {String} A string of either '\nAND' or 'WHERE'
  */
 const concatOptionsHelper = (options) => {
-  if (options.length > 1) {
-    return `\nAND `
-  } else {
-    return `WHERE `
-  }
-}
+	if (options.length > 1) {
+		return '\nAND ';
+	} else {
+		return 'WHERE ';
+	}
+};
